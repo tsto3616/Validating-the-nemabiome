@@ -1,0 +1,799 @@
+library(readxl)
+library(tidyverse)
+library("openxlsx")
+library(dplyr)
+library(janitor)
+
+#import the dataset (all ASVs), note the lab pooling is removed to simplify the pooling  code
+All_ASVs<-read_excel("ASVs_masterfile_prepooling2.xlsx", sheet="Sheet1", col_names=TRUE)
+head(All_ASVs)
+
+# P1 to P3 are the replicates
+All_ASVs1<-filter(All_ASVs, Pooling.method=="P1")
+head(All_ASVs1)
+All_ASVs2<-filter(All_ASVs, Pooling.method=="P2")
+All_ASVs3<-filter(All_ASVs, Pooling.method=="P3")
+
+merge_P1_P2<- merge(All_ASVs1, All_ASVs2, all.x=TRUE, all.y=TRUE)
+merged_P1_P3<- merge(merge_P1_P2, All_ASVs3, all.x=TRUE, all.y=TRUE)
+
+head(merged_P1_P3)
+
+# just to reformat the data
+data_long<- gather(merged_P1_P3, Nematodes, Abundance, 4:74, factor_key=TRUE)
+data_long
+
+tail(data_long)
+
+#### P10
+# now for bioinformatic pooling of 3 replicates- when the three PCR recations are added together and replaced with a zero if any of the 3 replicates return a zero 
+pc10<- data_long %>%
+  group_by(Cow, Primer, Nematodes) %>%
+  filter(sum(!is.na(Abundance) & Abundance > 0) >= 3) 
+
+pc10
+
+PC_sp10<- pc10 %>% select(Nematodes, Abundance)
+
+PC_sp10
+
+PC_sp10$Cow<-as.factor(PC_sp10$Cow)
+
+pc10<-merge(aggregate(Abundance ~ Nematodes+Cow+Primer, PC_sp10, sum), PC_sp10, all.x = T)
+
+pc10
+
+write.xlsx(pc10, "Bioinfo_pooling_P10.xlsx")
+
+# now to import it and change it to a wide format
+ten_bioinfo<-read_excel("Bioinfo_pooling_P10.xlsx", col_names=TRUE)
+head(ten_bioinfo)
+
+pc_wide10<-xtabs(Abundance ~ Nematodes +Primer+Cow, data = ten_bioinfo)
+
+pc_wide10
+
+write.xlsx(pc_wide10, "Pooling method 10 wide format (2).xlsx")
+
+###################################### 
+
+# now for pooling method 9
+#### now for bioinformatic pooling of 3 replicates- when the three PCR recations are added together and replaced with a zero if 2 of the 3 replicates return a zero 
+pc9<- data_long %>%
+  group_by(Cow, Primer, Nematodes) %>%
+  filter(sum(!is.na(Abundance) & Abundance > 0) >= 2) 
+
+pc9
+
+PC_sp9<- pc9 %>% select(Nematodes, Abundance)
+
+PC_sp9
+
+PC_sp9$Cow<-as.factor(PC_sp9$Cow)
+
+pc9<-merge(aggregate(Abundance ~ Nematodes+Cow+Primer, PC_sp9, sum), PC_sp9, all.x = T)
+
+pc9
+
+write.xlsx(pc9, "Pooling method 9 long (2).xlsx")
+
+# now to import it and change it to a wide format
+nine_bioinfo<-read_excel("Pooling method 9 long (2).xlsx", col_names=TRUE)
+head(nine_bioinfo)
+
+pc_wide9<-xtabs(Abundance ~ Nematodes +Primer+Cow, data = nine_bioinfo)
+
+pc_wide9
+
+write.xlsx(pc_wide9, "Pooling method 9 wide format (2).xlsx")
+
+###################################### 
+# now for pooling method 8
+#### now for bioinformatic pooling of 3 replicates- when the three PCR recations are added together 
+pc8<- data_long %>%
+  group_by(Cow, Primer, Nematodes)
+
+pc8
+
+PC_sp8<- pc8 %>% select(Nematodes, Abundance)
+
+PC_sp8
+
+PC_sp8$Cow<-as.factor(PC_sp8$Cow)
+
+pc8<-merge(aggregate(Abundance ~ Nematodes+Cow+Primer, PC_sp8, sum), PC_sp8, all.x = T)
+
+pc8
+
+write.xlsx(pc8, "Pooling method 8 long (2).xlsx")
+
+# now to import it and change it to a wide format
+eight_bioinfo<-read_excel("Pooling method 8 long.xlsx", col_names=TRUE)
+head(eight_bioinfo)
+
+pc_wide8<-xtabs(Abundance ~ Nematodes +Primer+Cow, data = eight_bioinfo)
+
+pc_wide8
+
+write.xlsx(pc_wide8, "Pooling method 8 wide format.xlsx")
+
+###################################### 
+# now for pooling method 11
+#### now for bioinformatic pooling of PCR1 and 2 (additive), where total reads are added, no removal
+All_ASVs<-read_excel("ASVs_masterfile_prepooling2.xlsx", sheet="Sheet1", col_names=TRUE)
+head(All_ASVs)
+
+All_ASVs1<-filter(All_ASVs, Pooling.method=="P1")
+head(All_ASVs1)
+All_ASVs2<-filter(All_ASVs, Pooling.method=="P2")
+
+merged_P1_P2<- merge(All_ASVs1, All_ASVs2, all.x=TRUE, all.y=TRUE)
+
+
+head(merged_P1_P2)
+
+data_long<- gather(merged_P1_P2, Nematodes, Abundance, 4:74, factor_key=TRUE)
+data_long
+
+tail(data_long)
+
+pc11<- data_long %>%
+  group_by(Cow, Primer, Nematodes)
+
+pc11
+
+PC_sp11<- pc11 %>% select(Nematodes, Abundance)
+
+PC_sp11
+
+PC_sp11$Cow<-as.factor(PC_sp11$Cow)
+
+pc11<-merge(aggregate(Abundance ~ Nematodes+Cow+Primer, PC_sp11, sum), PC_sp11, all.x = T)
+
+pc11
+
+write.xlsx(pc11, "Pooling method 11 long.xlsx")
+
+# now to import it and change it to a wide format
+eleven_bioinfo<-read_excel("Pooling method 11 long.xlsx", col_names=TRUE)
+head(eleven_bioinfo)
+
+pc_wide11<-xtabs(Abundance ~ Nematodes +Primer+Cow, data = eleven_bioinfo)
+
+pc_wide11
+
+write.xlsx(pc_wide11, "Pooling method 11 wide format.xlsx")
+
+###################################### 
+# now for pooling method 12
+#### now for bioinformatic pooling of PCR1 and 2 (subtractive), where total reads are added, and reads are removed if not present in both species
+pc12<- data_long %>%
+  group_by(Cow, Primer, Nematodes) %>%
+  filter(sum(!is.na(Abundance) & Abundance > 0) >= 2) 
+
+pc12
+
+PC_sp12<- pc12 %>% select(Nematodes, Abundance)
+
+PC_sp12
+
+PC_sp12$Cow<-as.factor(PC_sp12$Cow)
+
+pc12<-merge(aggregate(Abundance ~ Nematodes+Cow+Primer, PC_sp12, sum), PC_sp12, all.x = T)
+
+pc12
+
+write.xlsx(pc12, "Pooling method 12 long.xlsx")
+
+# now to import it and change it to a wide format
+twelve_bioinfo<-read_excel("Pooling method 12 long.xlsx", col_names=TRUE)
+head(twelve_bioinfo)
+
+pc_wide12<-xtabs(Abundance ~ Nematodes +Primer+Cow, data = twelve_bioinfo)
+
+pc_wide12
+
+write.xlsx(pc_wide12, "Pooling method 12 wide format.xlsx")
+
+###################################### 
+# now for pooling method 13
+#### now for bioinformatic pooling of PCR1 and 3 (additive), where total reads are added, no removal
+All_ASVs<-read_excel("ASVs_masterfile_prepooling2.xlsx", sheet="Sheet1", col_names=TRUE)
+head(All_ASVs)
+
+All_ASVs1<-filter(All_ASVs, Pooling.method=="P1")
+head(All_ASVs1)
+All_ASVs3<-filter(All_ASVs, Pooling.method=="P3")
+
+merged_P1_P3<- merge(All_ASVs1, All_ASVs3, all.x=TRUE, all.y=TRUE)
+
+
+head(merged_P1_P3)
+
+data_long<- gather(merged_P1_P3, Nematodes, Abundance, 4:74, factor_key=TRUE)
+data_long
+
+tail(data_long)
+
+pc13<- data_long %>%
+  group_by(Cow, Primer, Nematodes)
+
+pc13
+
+PC_sp13<- pc13 %>% select(Nematodes, Abundance)
+
+PC_sp13
+
+PC_sp13$Cow<-as.factor(PC_sp13$Cow)
+
+pc13<-merge(aggregate(Abundance ~ Nematodes+Cow+Primer, PC_sp13, sum), PC_sp13, all.x = T)
+
+pc13
+
+write.xlsx(pc13, "Pooling method 13 long.xlsx")
+
+# now to import it and change it to a wide format
+thirteen_bioinfo<-read_excel("Pooling method 13 long.xlsx", col_names=TRUE)
+head(thirteen_bioinfo)
+
+pc_wide13<-xtabs(Abundance ~ Nematodes +Primer+Cow, data = thirteen_bioinfo)
+
+pc_wide13
+
+write.xlsx(pc_wide13, "Pooling method 13 wide format.xlsx")
+
+###################################### 
+# now for pooling method 14
+#### now for bioinformatic pooling of PCR1 and 3 (subtractive), where total reads are added, and reads are removed if not present in both species
+pc14<- data_long %>%
+  group_by(Cow, Primer, Nematodes) %>%
+  filter(sum(!is.na(Abundance) & Abundance > 0) >= 2) 
+
+pc14
+
+PC_sp14<- pc14 %>% select(Nematodes, Abundance)
+
+PC_sp14
+
+PC_sp14$Cow<-as.factor(PC_sp14$Cow)
+
+pc14<-merge(aggregate(Abundance ~ Nematodes+Cow+Primer, PC_sp14, sum), PC_sp14, all.x = T)
+
+pc14
+
+write.xlsx(pc14, "Pooling method 14 long.xlsx")
+
+# now to import it and change it to a wide format
+forteen_bioinfo<-read_excel("Pooling method 14 long.xlsx", col_names=TRUE)
+head(forteen_bioinfo)
+
+pc_wide14<-xtabs(Abundance ~ Nematodes +Primer+Cow, data = forteen_bioinfo)
+
+pc_wide14
+
+write.xlsx(pc_wide14, "Pooling method 14 wide format.xlsx")
+
+###################################### 
+# now for pooling method 15
+#### now for bioinformatic pooling of PCR2 and 3 (additive), where total reads are added, no removal
+All_ASVs<-read_excel("ASVs_masterfile_prepooling2.xlsx", sheet="Sheet1", col_names=TRUE)
+head(All_ASVs)
+
+All_ASVs2<-filter(All_ASVs, Pooling.method=="P2")
+head(All_ASVs1)
+All_ASVs3<-filter(All_ASVs, Pooling.method=="P3")
+
+merged_P2_P3<- merge(All_ASVs2, All_ASVs3, all.x=TRUE, all.y=TRUE)
+
+
+head(merged_P2_P3)
+
+data_long<- gather(merged_P2_P3, Nematodes, Abundance, 4:74, factor_key=TRUE)
+data_long
+
+tail(data_long)
+
+pc15<- data_long %>%
+  group_by(Cow, Primer, Nematodes)
+
+pc15
+
+PC_sp15<- pc15 %>% select(Nematodes, Abundance)
+
+PC_sp15
+
+PC_sp15$Cow<-as.factor(PC_sp15$Cow)
+
+pc15<-merge(aggregate(Abundance ~ Nematodes+Cow+Primer, PC_sp15, sum), PC_sp15, all.x = T)
+
+pc15
+
+write.xlsx(pc15, "Pooling method 15 long.xlsx")
+
+# now to import it and change it to a wide format
+fifthteen_bioinfo<-read_excel("Pooling method 15 long.xlsx", col_names=TRUE)
+head(fifthteen_bioinfo)
+
+pc_wide15<-xtabs(Abundance ~ Nematodes +Primer+Cow, data = fifthteen_bioinfo)
+
+pc_wide15
+
+write.xlsx(pc_wide15, "Pooling method 15 wide format.xlsx")
+
+###################################### 
+# now for pooling method 16
+#### now for bioinformatic pooling of PCR2 and 3 (subtractive), where total reads are added, and reads are removed if not present in both species
+pc16<- data_long %>%
+  group_by(Cow, Primer, Nematodes) %>%
+  filter(sum(!is.na(Abundance) & Abundance > 0) >= 2) 
+
+pc16
+
+PC_sp16<- pc16 %>% select(Nematodes, Abundance)
+
+PC_sp16
+
+PC_sp16$Cow<-as.factor(PC_sp16$Cow)
+
+pc16<-merge(aggregate(Abundance ~ Nematodes+Cow+Primer, PC_sp16, sum), PC_sp16, all.x = T)
+
+pc16
+
+write.xlsx(pc16, "Pooling method 16 long.xlsx")
+
+# now to import it and change it to a wide format
+sixteen_bioinfo<-read_excel("Pooling method 16 long.xlsx", col_names=TRUE)
+head(sixteen_bioinfo)
+
+pc_wide16<-xtabs(Abundance ~ Nematodes +Primer+Cow, data = sixteen_bioinfo)
+
+pc_wide16
+
+write.xlsx(pc_wide16, "Pooling method 16 wide format.xlsx")
+
+###################################### 
+# now for pooling method 1-7 (lab pooling and replicates)
+#### no bioinformatic pooling, JUST reformating then to make them matchup with the other datasets. This is JUST for replicates and lab pooling
+All_all<-read_excel("ASVs_masterfile_prepooling2.xlsx")
+head(All_all)
+
+data_long<- gather(All_all, Nematodes, Abundance, 4:74, factor_key=TRUE)
+data_long
+
+tail(data_long)
+
+pcall<- data_long %>%
+  group_by(Cow, Primer, "Pooling  method", Nematodes)
+
+pcall
+
+write.xlsx(pcall, "Pooling method all long.xlsx")
+
+# now to import it and change it to a wide format
+all_bioinfo<-read_excel("Pooling method all long.xlsx", col_names=TRUE)
+head(all_bioinfo)
+
+pc_wide_all<-xtabs(Abundance ~ Nematodes +Primer+Cow+ Pooling.method, data = all_bioinfo)
+
+pc_wide_all
+
+write.xlsx(pc_wide_all, "Pooling method all (1-7) wide format.xlsx")
+
+#####################################
+# now for the merging of ALL the datasets above
+#####################################
+# transposed the data, added a primer and cow column
+# first we merge the 1-7 dataset with the 8 dataset
+# for some reason col_names doesnt work so added .name_repair=minimal which works 
+# note assigned the pooling method number (P#) in excel not R before merging!
+all_bioinfo<-read_excel("Pooling method all (1-7) wide format.xlsx", col_names=TRUE, .name_repair="minimal", sheet="Sheet1") 
+head(all_bioinfo)
+
+eight_bioinfo<-read_excel("Pooling method 8 wide format.xlsx", col_names=TRUE, .name_repair="minimal")
+head(eight_bioinfo)
+
+# extra coding is to convert NAs into zeros!
+merge1<- merge(all_bioinfo, eight_bioinfo, all.x=TRUE, all.y=TRUE, all=TRUE)
+merge1[is.na(merge1)]<-0
+
+merge1
+
+write.xlsx(merge1, "merge1 (2).xlsx")
+
+#####################################################
+nine_bioinfo<-read_excel("Pooling method 9 wide format.xlsx", col_names=TRUE, .name_repair="minimal")
+head(nine_bioinfo)
+
+# extra coding is to convert NAs into zeros!
+merge2<- merge(merge1, nine_bioinfo, all.x=TRUE, all.y=TRUE, all=TRUE)
+merge2[is.na(merge2)]<-0
+
+merge2
+
+write.xlsx(merge2, "merge2.xlsx")
+
+#####################################################
+ten_bioinfo<-read_excel("Pooling method 10 wide format.xlsx", col_names=TRUE, .name_repair="minimal")
+head(ten_bioinfo)
+
+# extra coding is to convert NAs into zeros!
+merge3<- merge(merge2, ten_bioinfo, all.x=TRUE, all.y=TRUE, all=TRUE)
+merge3[is.na(merge3)]<-0
+
+merge3
+
+write.xlsx(merge3, "merge3.xlsx")
+
+#####################################################
+eleven_bioinfo<-read_excel("Pooling method 11 wide format.xlsx", col_names=TRUE, .name_repair="minimal")
+head(eleven_bioinfo)
+
+# extra coding is to convert NAs into zeros!
+merge4<- merge(merge3, eleven_bioinfo, all.x=TRUE, all.y=TRUE, all=TRUE)
+merge4[is.na(merge4)]<-0
+
+merge4
+
+write.xlsx(merge4, "merge4.xlsx")
+
+#####################################################
+twelve_bioinfo<-read_excel("Pooling method 12 wide format.xlsx", col_names=TRUE, .name_repair="minimal")
+head(twelve_bioinfo)
+
+# extra coding is to convert NAs into zeros!
+merge5<- merge(merge4, twelve_bioinfo, all.x=TRUE, all.y=TRUE, all=TRUE)
+merge5[is.na(merge5)]<-0
+
+merge5
+
+write.xlsx(merge5, "merge5.xlsx")
+
+#####################################################
+thirteen_bioinfo<-read_excel("Pooling method 13 wide format.xlsx", col_names=TRUE, .name_repair="minimal")
+head(thirteen_bioinfo)
+
+# extra coding is to convert NAs into zeros!
+merge6<- merge(merge5, thirteen_bioinfo, all.x=TRUE, all.y=TRUE, all=TRUE)
+merge6[is.na(merge6)]<-0
+
+merge6
+
+write.xlsx(merge6, "merge6.xlsx")
+
+#####################################################
+forteen_bioinfo<-read_excel("Pooling method 14 wide format.xlsx", col_names=TRUE, .name_repair="minimal")
+head(forteen_bioinfo)
+
+# extra coding is to convert NAs into zeros!
+merge7<- merge(merge6, forteen_bioinfo, all.x=TRUE, all.y=TRUE, all=TRUE)
+merge7[is.na(merge7)]<-0
+
+merge7
+
+write.xlsx(merge7, "merge7.xlsx")
+
+#####################################################
+fifthteen_bioinfo<-read_excel("Pooling method 15 wide format.xlsx", col_names=TRUE, .name_repair="minimal")
+head(fifthteen_bioinfo)
+
+# extra coding is to convert NAs into zeros!
+merge8<- merge(merge7, fifthteen_bioinfo, all.x=TRUE, all.y=TRUE, all=TRUE)
+merge8[is.na(merge8)]<-0
+
+merge8
+
+write.xlsx(merge8, "merge8.xlsx")
+
+#####################################################
+sixteen_bioinfo<-read_excel("Pooling method 16 wide format.xlsx", col_names=TRUE, .name_repair="minimal")
+head(sixteen_bioinfo)
+
+# extra coding is to convert NAs into zeros!
+merge9<- merge(merge8, sixteen_bioinfo, all.x=TRUE, all.y=TRUE)
+merge9[is.na(merge9)]<-0
+
+merge9
+
+write.xlsx(merge9, "merge9.xlsx")
+
+#########################################################################
+# now the proportion based thresholds
+#########################################################################
+# First we convert it into percentages
+masterfile<-read_excel("merge9.xlsx")
+head(masterfile)
+
+percentages<-adorn_percentages(masterfile, denominator="row", na.rm=TRUE)
+head(percentages)
+
+# now we put it all into percentages to compare it all
+write.xlsx(percentages, "all_reads_ASVs.xlsx")
+
+# now the 0.05% cut off 
+percentages[percentages <= 0.0005] <- 0
+
+pc<-adorn_percentages(percentages, denominator="row", na.rm=TRUE)
+
+pc[is.na(pc)] <- 0
+
+write.xlsx(pc, "0.05_cut_off_ASVs_scrap.xlsx")
+
+# now the 0.5% cut off
+percentages<-adorn_percentages(masterfile, denominator="row", na.rm=TRUE)
+head(percentages)
+
+percentages[percentages <= 0.005] <- 0
+
+pc2<-adorn_percentages(percentages, denominator="row", na.rm=TRUE)
+
+pc2[is.na(pc2)] <- 0
+
+write.xlsx(pc2, "0.5_cut_off_ASVs_scrap.xlsx")
+
+# now the 1% cut off
+percentages<-adorn_percentages(masterfile, denominator="row", na.rm=TRUE)
+head(percentages)
+
+percentages[percentages <= 0.01] <- 0
+
+pc3<-adorn_percentages(percentages, denominator="row", na.rm=TRUE)
+
+pc3[is.na(pc3)] <- 0
+
+write.xlsx(pc3, "1_percent_cut_off_ASVs_scrap.xlsx")
+
+# now the 2% cut off
+percentages<-adorn_percentages(masterfile, denominator="row", na.rm=TRUE)
+head(percentages)
+
+percentages[percentages <= 0.02] <- 0
+
+pc4<-adorn_percentages(percentages, denominator="row", na.rm=TRUE)
+
+pc4[is.na(pc4)] <- 0
+
+write.xlsx(pc4, "2_percent_cut_off_ASVs_scrap.xlsx")
+
+# now we merge the datasets below, then we use it as a masterfile - the masterfile name = "Proportion_thresholds_masterfile_nemabiome_2024.xlsx"
+# inside excel assign the thresholds to the column (eg threshold column labelled all reads or 0.05%)
+all_reads<-read.xlsx("all_reads_ASVs.xlsx")
+
+ASV_0.05<-read.xlsx("0.05_cut_off_ASVs_scrap.xlsx")
+
+merged<- merge(all_reads, ASV_0.05, all.x=TRUE, all.y=TRUE)
+merged[is.na(merged)]<-0
+
+merged
+
+ASV_0.5<-read.xlsx("0.5_cut_off_ASVs_scrap.xlsx")
+
+merged1<- merge(merged, ASV_0.5, all.x=TRUE, all.y=TRUE)
+merged1[is.na(merged1)]<-0
+
+view(merged1)
+
+ASV_1<-read.xlsx("1_cut_off_ASVs_scrap.xlsx")
+
+merged2<- merge(merged1, ASV_1, all.x=TRUE, all.y=TRUE)
+merged2[is.na(merged2)]<-0
+
+view(merged2)
+
+ASV_2<-read.xlsx("2_cut_off_ASVs_scrap.xlsx")
+
+merged3<- merge(merged2, ASV_2, all.x=TRUE, all.y=TRUE)
+merged3[is.na(merged3)]<-0
+
+view(merged3)
+
+write.xlsx(merged3, "Proportion_thresholds_masterfile_nemabiome_2024.xlsx")
+
+##########################################################################
+# now we go about creating the copy number thresholds 
+##########################################################################
+# first we go about leaving it in raw copy numbers rather than the convert to the percentage immediately unlike with the earlier threshold pipeline!
+masterfile<-read_excel("merge9.xlsx")
+head(masterfile)
+
+# now we put it all into percentages to compare it all
+all<-adorn_percentages(masterfile, denominator="row", na.rm=TRUE)
+
+write.xlsx(all, "Raw_all_reads_ASVs.xlsx")
+
+# now the >1 cut off 
+masterfile[masterfile < 1] <- 0
+
+pc<-adorn_percentages(masterfile, denominator="row", na.rm=TRUE)
+
+pc[is.na(pc)] <- 0
+
+write.xlsx(pc, "singleton_cut_off_ASVs_scrap.xlsx")
+
+# now the > 5 read cut off
+masterfile[masterfile < 5] <- 0
+
+pc2<-adorn_percentages(masterfile, denominator="row", na.rm=TRUE)
+
+pc2[is.na(pc2)] <- 0
+
+write.xlsx(pc2, "5_cut_off_ASVs_scrap.xlsx")
+
+# now the 100 cut off
+masterfile[masterfile < 100] <- 0
+
+pc3<-adorn_percentages(masterfile, denominator="row", na.rm=TRUE)
+
+pc3[is.na(pc3)] <- 0
+
+write.xlsx(pc3, "100_cut_off_raw_ASVs_scrap.xlsx")
+
+# now the 1000 cut off
+masterfile[masterfile < 1000] <- 0
+
+pc4<-adorn_percentages(masterfile, denominator="row", na.rm=TRUE)
+
+pc4[is.na(pc4)] <- 0
+
+write.xlsx(pc4, "1000_cut_off_raw_ASVs_scrap.xlsx")
+
+# now we merge the datasets below, then we use it as a masterfile - the masterfile name = "Thresholds_masterfile_nemabiome_may_2024.xlsx"
+# Assign the threshold labels in excel before merging
+all_reads<-read.xlsx("Raw_all_reads_ASVs.xlsx")
+
+ASV_1<-read.xlsx("singleton_cut_off_ASVs_scrap.xlsx")
+
+merged<- merge(all_reads, ASV_1, all.x=TRUE, all.y=TRUE)
+merged[is.na(merged)]<-0
+
+merged
+
+ASV_5<-read.xlsx("5_cut_off_ASVs_scrap.xlsx")
+
+merged1<- merge(merged, ASV_5, all.x=TRUE, all.y=TRUE)
+merged1[is.na(merged1)]<-0
+
+merged1
+
+ASV_100<-read.xlsx("100_cut_off_raw_ASVs_scrap.xlsx")
+
+merged2<- merge(merged1, ASV_100, all.x=TRUE, all.y=TRUE)
+merged2[is.na(merged2)]<-0
+
+merged2
+
+ASV_1000<-read.xlsx("1000_cut_off_raw_ASVs_scrap.xlsx")
+
+merged3<- merge(merged2, ASV_1000, all.x=TRUE, all.y=TRUE)
+merged3[is.na(merged3)]<-0
+
+merged3
+
+write.xlsx(merged3, "raw_thresholds_masterfile_nemabiome_2024.xlsx")
+
+##########################################################################
+# now for the rarefaction
+##########################################################################
+# First up is the rarefication where the community is subsampled randomly for a depth of 2,000, 5,000, 10,000, 25,000 and all (in other words our control/ no treatment)
+# assigned the rarefaction treatment labels in excel before merging
+com = masterfile[,4:ncol(masterfile)]
+head(com)
+
+com<- round(com)
+# had to do this step to turn it into a whole number dataset instead of decimal places, otherwise rrarefy wont work
+
+rare_2000<-rrarefy(com, 2000)
+
+data.scores = as.data.frame(scores(rare_2000))
+
+data.scores$Cow = masterfile$Cow
+data.scores$Primer = masterfile$Primer
+data.scores$Pooling.method = masterfile$Pooling.method
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+
+data.scores
+
+write.csv(data.scores, "2000 rare file.csv")
+
+# now for 5000
+rare_5000<-rrarefy(com, 5000)
+
+data.scores = as.data.frame(scores(rare_5000))
+
+data.scores$Cow = masterfile$Cow
+data.scores$Primer = masterfile$Primer
+data.scores$Pooling.method = masterfile$Pooling.method
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+
+data.scores
+
+write.csv(data.scores, "5000 rare file.csv")
+
+# now for the 10,000 rare
+rare_10000<-rrarefy(com, 10000)
+# note says some row sums < 'sample' and so are not rarefied 
+
+data.scores = as.data.frame(scores(rare_10000))
+
+data.scores$Cow = masterfile$Cow
+data.scores$Primer = masterfile$Primer
+data.scores$Pooling.method = masterfile$Pooling.method
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+
+data.scores
+
+write.csv(data.scores, "10000 rare file.csv")
+
+# now for the 25,000 rare
+rare_25000<-rrarefy(com, 25000)
+# note says some row sums < 'sample' and so are not rarefied 
+
+data.scores = as.data.frame(scores(rare_25000))
+
+data.scores$Cow = masterfile$Cow
+data.scores$Primer = masterfile$Primer
+data.scores$Pooling.method = masterfile$Pooling.method
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+
+data.scores
+
+write.csv(data.scores, "25000 rare file.csv")
+
+# finally to get the control- reformating 
+data.scores = as.data.frame(scores(com))
+
+data.scores$Cow = masterfile$Cow
+data.scores$Primer = masterfile$Primer
+data.scores$Pooling.method = masterfile$Pooling.method
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+
+data.scores
+
+write.csv(data.scores, "all rare file.csv")
+
+# now for merging then converting into %s, otherwise it isn't comparable
+all_reads<-read.csv("all rare file.csv")
+
+rare_25000<-read.csv("25000 rare file.csv")
+
+merged<- merge(all_reads, rare_25000, all.x=TRUE, all.y=TRUE)
+merged[is.na(merged)]<-0
+
+merged
+
+rare_10000<-read.csv("10000 rare file.csv")
+
+merged1<- merge(merged, rare_10000, all.x=TRUE, all.y=TRUE)
+merged1[is.na(merged1)]<-0
+
+merged1
+
+rare_5000<-read.csv("5000 rare file.csv")
+
+merged2<- merge(merged1, rare_5000, all.x=TRUE, all.y=TRUE)
+merged2[is.na(merged2)]<-0
+
+merged2
+
+rare_2000<-read.csv("2000 rare file.csv")
+
+merged3<- merge(merged2, rare_2000, all.x=TRUE, all.y=TRUE)
+merged3[is.na(merged3)]<-0
+
+merged3
+
+write.xlsx(merged3, "rarefied_masterfile_nemabiome_2024.xlsx")
