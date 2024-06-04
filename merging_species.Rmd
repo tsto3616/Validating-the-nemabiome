@@ -1,0 +1,60 @@
+library(tidyverse)
+library("openxlsx")
+library(dplyr)
+library(readxl)
+library(ggplot2)
+packageVersion("ggplot2")
+library(vegan)
+packageVersion("vegan")
+
+# this is for the % thresholds
+# first to merge the species. Before doing anything in R, the species names of the ASVs were changed to eliminate the '...1'
+ASVs_prop_thresh<-read_xlsx("raw_thresholds_masterfile_nemabiome_2024.xlsx", col_names=TRUE, .name_repair="minimal")
+head(ASVs_copy_thresh)
+
+Merging_df1<-as.data.frame(ASVs_prop_thresh)
+
+Merging_df1 
+
+df1<-as.data.frame(lapply(split.default(Merging_df1, names(Merging_df1)), function(x) Reduce(`+`, x)))
+
+head(df1)
+tail(df1)
+
+write.xlsx(df1, "species_nemabiome_merged_2024.xlsx")
+
+#########################################################################
+# first to merge the species. Before doing anything in R, the species names of the ASVs were changed to eliminate the '...1'
+ASVs_copy_thresh<-read_xlsx("raw_thresholds_masterfile_nemabiome_2024.xlsx", col_names=TRUE, .name_repair="minimal")
+head(ASVs_copy_thresh)
+
+Merging_df1<-as.data.frame(ASVs_copy_thresh)
+
+Merging_df1 
+
+df1<-as.data.frame(lapply(split.default(Merging_df1, names(Merging_df1)), function(x) Reduce(`+`, x)))
+
+head(df1)
+tail(df1)
+
+write.xlsx(df1, "raw_threshold_species_nemabiome_merged_2024.xlsx")
+
+#########################################################################
+# first to merge the species. Before doing anything in R, the species names of the ASVs were changed to eliminate the '...1'
+# first to merge the species, but first to convert it all into percentages (as I forgot to do it earlier in the pipeline)
+rare_merging<-read_xlsx("rarefied_masterfile_nemabiome_2024.xlsx", col_names=TRUE, .name_repair="minimal")
+head(species3)
+
+species4<-adorn_percentages(species3, denominator="row", na.rm=TRUE)
+head(species4)
+
+Merging_df1<-as.data.frame(species4)
+
+Merging_df1 
+
+df1<-as.data.frame(lapply(split.default(Merging_df1, names(Merging_df1)), function(x) Reduce(`+`, x)))
+
+head(df1)
+tail(df1)
+
+write.xlsx(df1, "rarefied_species_nemabiome_merged_2024.xlsx")
