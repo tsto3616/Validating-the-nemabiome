@@ -9,7 +9,7 @@ packageVersion("vegan")
 
 # this is for the % thresholds
 # first to merge the species. Before doing anything in R, the species names of the ASVs were changed to eliminate the '...1'
-ASVs_prop_thresh<-read_xlsx("raw_thresholds_masterfile_nemabiome_2024.xlsx", col_names=TRUE, .name_repair="minimal")
+ASVs_prop_thresh<-read_xlsx("Thresholds_masterfile_nemabiome_2024.xlsx", col_names=TRUE, .name_repair="minimal")
 head(ASVs_copy_thresh)
 
 Merging_df1<-as.data.frame(ASVs_prop_thresh)
