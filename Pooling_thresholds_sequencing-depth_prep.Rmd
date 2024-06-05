@@ -5,7 +5,7 @@ library(dplyr)
 library(janitor)
 
 #import the dataset (all ASVs), note the lab pooling is removed to simplify the pooling  code
-All_ASVs<-read_excel("ASVs_masterfile_prepooling2.xlsx", sheet="Sheet1", col_names=TRUE)
+All_ASVs<-read_excel("ASVs_masterfile_prepooling.xlsx", sheet="Sheet1", col_names=TRUE)
 head(All_ASVs)
 
 # P1 to P3 are the replicates
@@ -75,17 +75,17 @@ pc9<-merge(aggregate(Abundance ~ Nematodes+Cow+Primer, PC_sp9, sum), PC_sp9, all
 
 pc9
 
-write.xlsx(pc9, "Pooling method 9 long (2).xlsx")
+write.xlsx(pc9, "Pooling method 9 long.xlsx")
 
 # now to import it and change it to a wide format
-nine_bioinfo<-read_excel("Pooling method 9 long (2).xlsx", col_names=TRUE)
+nine_bioinfo<-read_excel("Pooling method 9 long.xlsx", col_names=TRUE)
 head(nine_bioinfo)
 
 pc_wide9<-xtabs(Abundance ~ Nematodes +Primer+Cow, data = nine_bioinfo)
 
 pc_wide9
 
-write.xlsx(pc_wide9, "Pooling method 9 wide format (2).xlsx")
+write.xlsx(pc_wide9, "Pooling method 9 wide format.xlsx")
 
 ###################################### 
 # now for pooling method 8
@@ -105,7 +105,7 @@ pc8<-merge(aggregate(Abundance ~ Nematodes+Cow+Primer, PC_sp8, sum), PC_sp8, all
 
 pc8
 
-write.xlsx(pc8, "Pooling method 8 long (2).xlsx")
+write.xlsx(pc8, "Pooling method 8 long.xlsx")
 
 # now to import it and change it to a wide format
 eight_bioinfo<-read_excel("Pooling method 8 long.xlsx", col_names=TRUE)
@@ -120,7 +120,7 @@ write.xlsx(pc_wide8, "Pooling method 8 wide format.xlsx")
 ###################################### 
 # now for pooling method 11
 #### now for bioinformatic pooling of PCR1 and 2 (additive), where total reads are added, no removal
-All_ASVs<-read_excel("ASVs_masterfile_prepooling2.xlsx", sheet="Sheet1", col_names=TRUE)
+All_ASVs<-read_excel("ASVs_masterfile_prepooling.xlsx", sheet="Sheet1", col_names=TRUE)
 head(All_ASVs)
 
 All_ASVs1<-filter(All_ASVs, Pooling.method=="P1")
@@ -198,7 +198,7 @@ write.xlsx(pc_wide12, "Pooling method 12 wide format.xlsx")
 ###################################### 
 # now for pooling method 13
 #### now for bioinformatic pooling of PCR1 and 3 (additive), where total reads are added, no removal
-All_ASVs<-read_excel("ASVs_masterfile_prepooling2.xlsx", sheet="Sheet1", col_names=TRUE)
+All_ASVs<-read_excel("ASVs_masterfile_prepooling.xlsx", sheet="Sheet1", col_names=TRUE)
 head(All_ASVs)
 
 All_ASVs1<-filter(All_ASVs, Pooling.method=="P1")
@@ -398,7 +398,7 @@ merge1[is.na(merge1)]<-0
 
 merge1
 
-write.xlsx(merge1, "merge1 (2).xlsx")
+write.xlsx(merge1, "merge1.xlsx")
 
 #####################################################
 nine_bioinfo<-read_excel("Pooling method 9 wide format.xlsx", col_names=TRUE, .name_repair="minimal")
