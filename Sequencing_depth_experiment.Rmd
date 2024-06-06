@@ -1,0 +1,60 @@
+library(tidyverse)
+library("openxlsx")
+library(dplyr)
+library(readxl)
+library(ggplot2)
+library(vegan)
+
+# this is for the sequencing depth!
+rare<-read_xlsx("rarefied_species_nemabiome_merged_2024.xlsx", col_names=TRUE, .name_repair="minimal")
+head(rare)
+
+com = rare[,5:ncol(rare)]
+head(com)
+
+df_com<-as.data.frame(com)
+
+jac<-vegdist(df_com, method="jaccard", binary=FALSE)
+
+adonis2(jac ~  Sequencing.depth + Pooling.method + Primer + Cow, rare)
+
+#now to do a bar chart
+# now to evaluate the effect of pooling (first the replicates)
+P1<- subset(rare, Pooling.method== "P1")
+P2<- subset(rare, Pooling.method== "P2")
+P3<- subset(rare, Pooling.method== "P3")
+
+#this is to merge the datasets
+rare2<- rbind(P1, P2, P3)
+head(rare2)
+
+data_long<- gather(rare2, Nematodes, Abundance, "Cooperia oncophora":"Unidentified Haemonchus", factor_key=TRUE)
+data_long
+
+data_long$Sequencing.depth <- factor(data_long$Sequencing.depth, levels=c("2000", "5000", "10000", "25000", "All reads"))
+
+ggplot(data_long, aes(fill=Nematodes, y=Abundance, x=Sequencing.depth)) + theme(panel.background = element_blank(), strip.background = element_blank(),
+        strip.placement='outside',  axis.text.x=element_blank(), axis.ticks.x=element_blank())+
+   facet_grid(Primer~ Cow, scales= "free", space="free") +
+    geom_bar(position="fill", stat="identity")+
+  theme(axis.title.y = element_text(size = 8, face = "bold"), legend.title = element_text(size = 8, face = "bold"), 
+        legend.text = element_text(size = 8, face = "bold", colour = "black"), 
+        axis.text.y = element_text(colour = "black", size = 6, face = "bold")) + 
+  scale_y_continuous(expand = c(0,0)) + 
+  labs(x = "", y = "Relative Abundance (%)", fill = "Nematodes") +
+  theme(
+        legend.box = "horizontal",
+        legend.title = element_blank(),
+        legend.key.size = unit(0.3, "cm"),
+        legend.position="bottom") + theme(panel.background = element_blank(), strip.background = element_blank(),
+        strip.placement='outside',  axis.text.x=element_text(angle=270), axis.ticks.x=element_blank()) + scale_fill_discrete(
+    labels = c(expression(italic("Cooperia oncophora")), 
+    expression(italic("Cooperia punctata")),
+    expression(italic("Haemonchus contortus")),
+    expression(italic("Haemonchus placei")),
+    expression(italic("Oesophagostomum radiatum")),
+    expression(italic("Ostertagia ostertagi")),
+    expression(italic("Trichostrongylus axei")),
+    expression(paste("Unidentified", italic(" Haemonchus")))))
+    
+    
