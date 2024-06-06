@@ -3,6 +3,8 @@ Herein the R files "dada2_preparation.Rmd", "Pooling_thresholds_sequencing-depth
 
 Note the sequencing files are available under the labarchives file... FILL IN!!! 
 
+The "experimental_design" file explains the labels of the fasta files, which includes both primers, replicates and or lab pooling. 
+
 The reference file (for AssignTaxonomy() in "dada2_preparation.Rmd") is available within this branch under the name "NEMA_USYD_ITS2_Database_assignTax_v3.fa"
 
 The file needed for the "Pooling_thresholds_sequencing_depth_prep.Rmd" file is present under "ASVs_masterfile_prepooling.xlsx" in this branch.
