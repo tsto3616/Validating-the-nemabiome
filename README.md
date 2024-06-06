@@ -1,2 +1,2 @@
 # Validating-the-nemabiome
-The purpose of this repository is to serve as a supplementary material to the study... in particular supplying the data sufficient for the reanalysis of results. All the code (contained in R files) is the exact code used to construct the study, allowing for the reconstruction of the experiments. We decided to split the repository into three sections: data preparation, the threshold experiments and the sequencing depth experiment. 
+The files contained in this branch are for the analysis of the sequencing depth data.
