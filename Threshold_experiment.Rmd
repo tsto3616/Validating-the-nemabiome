@@ -1,0 +1,195 @@
+library(tidyverse)
+library("openxlsx")
+library(dplyr)
+library(readxl)
+library(ggplot2)
+packageVersion("ggplot2")
+library(vegan)
+packageVersion("vegan")
+
+# this is for the % thresholds!
+species_prop<-read_xlsx("prop_species_nemabiome_merged_2024.xlsx", col_names=TRUE, .name_repair="minimal")
+head(species_prop)
+
+# this is for the analysis of the species richness for the different pooling methods
+# note skipped the all reads and the removal of thresholds!
+species_all<-subset(species_prop, Threshold=="All reads")
+head(species_all)
+
+# this is to go and concert all numbers other than 0 into 1s
+rich_masterfile<- species_all %>% mutate_if(is.numeric, ~1 * (. != 0))
+tail(rich_masterfile)
+
+# now to work out the species richness-note this graph was not kept, just used to inform us on the species richness for the different pooling methods and primers
+rich_masterfile$Richness <- rowSums(rich_masterfile[5:12])
+head(rich_masterfile)
+
+p<-ggplot(rich_masterfile, aes(x=Pooling.method, y=Richness, fill=Primer, element_blank())) +
+  geom_boxplot() + theme_bw() +labs(x="Threshold applied", y="ASV richness") 
+p
+
+com = species_prop[,5:ncol(species_prop)]
+head(com)
+
+df_com<-as.data.frame(com)
+
+jac<-vegdist(df_com, method="jaccard", binary=FALSE)
+
+adonis2(jac ~  Threshold + Pooling.method + Primer + Cow, species_prop)
+
+P1<- subset(species, Pooling.method== "P1")
+P2<- subset(species, Pooling.method== "P2")
+P3<- subset(species, Pooling.method== "P3")
+
+#this is to merge the datasets
+P1_P3<- rbind(P1, P2, P3)
+head(P1_P3)
+tail(P1_P3)
+
+# now to do an NMDS
+masterfile = P1_P3[,5:ncol(P1_P3)]
+head(masterfile)
+
+m_com=as.matrix(masterfile)
+
+set.seed(123)
+nmds = metaMDS(m_com, distance = "jaccard", binary=FALSE)
+nmds
+ 
+plot(nmds)
+
+data.scores = as.data.frame(scores(nmds)$ sites)
+
+data.scores$Cow = P1_P3$Cow
+data.scores$Primer = P1_P3$Primer
+data.scores$Threshold = P1_P3$Threshold
+data.scores$Pooling.method = P1_P3$Pooling.method
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Threshold<-as.factor(data.scores$Threshold)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+
+# ok so this has 2 maybe 3 outliers (outside the 95% CI for the cow), and these are all the 2% threshold but that doesnt seem as important as below for the raw copy thresholds since they have loads of outliers and they are ALL the strictest threshold. 
+xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
+    geom_point(size = 3, aes(colour = Pooling.method, shape=Threshold), alpha=0.5)+
+    theme(axis.text.y = element_text(colour = "black", size = 12, face = "bold"), 
+    axis.text.x = element_text(colour = "black", face = "bold", size = 12), 
+    legend.text = element_text(size = 12, face ="bold", colour ="black"), 
+    legend.position = "right", axis.title.y = element_text(face = "bold", size = 14), 
+    axis.title.x = element_text(face = "bold", size = 14, colour = "black"), 
+    legend.title = element_text(size = 14, colour = "black", face = "bold"), 
+    panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
+    legend.key=element_blank()) + 
+    labs(x = "NMDS1", colour = "Primer chosen", y = "NMDS2") + labs(title="Stress value 0.012")  + stat_ellipse(geom="path", aes(linetype=Cow), lwd=1) 
+    
+xx
+
+#now to do a bar chart
+data_long<- gather(species_prop, Nematodes, Abundance, "Cooperia oncophora":"Unidentified Haemonchus", factor_key=TRUE)
+data_long
+
+data_long$Threshold <- factor(data_long$Threshold, levels=c("All reads", "0.05%", "0.5%", "1%", "2%"))
+
+ggplot(data_long, aes(fill=Nematodes, y=Abundance, x=Threshold)) + theme(panel.background = element_blank(), strip.background = element_blank(),
+        strip.placement='outside',  axis.text.x=element_blank(), axis.ticks.x=element_blank())+
+   facet_grid(Primer~ Cow, scales= "free", space="free") +
+    geom_bar(position="fill", stat="identity")+
+  theme(axis.title.y = element_text(size = 8, face = "bold"), legend.title = element_text(size = 8, face = "bold"), 
+        legend.text = element_text(size = 8, face = "bold", colour = "black"), 
+        axis.text.y = element_text(colour = "black", size = 6, face = "bold")) + 
+  scale_y_continuous(expand = c(0,0)) + 
+  labs(x = "", y = "Relative Abundance (%)", fill = "Nematodes") +
+  theme(
+        legend.box = "horizontal",
+        legend.title = element_blank(),
+        legend.key.size = unit(0.3, "cm"),
+        legend.position="bottom") + theme(panel.background = element_blank(), strip.background = element_blank(),
+        strip.placement='outside',  axis.text.x=element_text(angle=270), axis.ticks.x=element_blank()) + scale_fill_discrete(
+    labels = c(expression(italic("Cooperia oncophora")), 
+    expression(italic("Cooperia punctata")),
+    expression(italic("Haemonchus contortus")),
+    expression(italic("Haemonchus placei")),
+    expression(italic("Oesophagostomum radiatum")),
+    expression(italic("Ostertagia ostertagi")),
+    expression(italic("Trichostrongylus axei")),
+    expression(paste("Unidentified", italic(" Haemonchus")))))
+    
+##########################################################################
+# now for the copy thresholds!
+##########################################################################
+species_raw<-read_xlsx("raw_threshold_species_nemabiome_merged_2024.xlsx", col_names=TRUE, .name_repair="minimal")
+head(species_raw)
+
+# now onto the actual analysis
+com = species_raw[,5:ncol(species_raw)]
+head(com)
+
+df_com<-as.data.frame(com)
+
+jac2<-vegdist(df_com, method="jaccard", binary=FALSE)
+
+adonis2(jac2 ~  Threshold + Pooling.method + Primer + Cow, species2)
+
+# now to evaluate the effect of pooling (first the replicates)
+P1<- subset(species_raw, Pooling.method== "P1")
+P2<- subset(species_raw, Pooling.method== "P2")
+P3<- subset(species_raw, Pooling.method== "P3")
+
+#this is to merge the datasets
+P1_P3<- rbind(P1, P2, P3)
+head(P1_P3)
+tail(P1_P3)
+
+masterfile = P1_P3[,5:ncol(P1_P3)]
+head(masterfile)
+
+m_com=as.matrix(masterfile)
+
+set.seed(123)
+nmds = metaMDS(m_com, distance = "jaccard", binary=FALSE)
+nmds
+ 
+plot(nmds)
+
+data.scores = as.data.frame(scores(nmds)$ sites)
+
+data.scores$Cow = P1_P3$Cow
+data.scores$Primer = P1_P3$Primer
+data.scores$Threshold = P1_P3$Threshold
+data.scores$Pooling.method = P1_P3$Pooling.method
+
+data.scores$Primer<-as.factor(data.scores$Primer)
+data.scores$Cow<-as.factor(data.scores$Cow)
+data.scores$Threshold<-as.factor(data.scores$Threshold)
+data.scores$Pooling.method<-as.factor(data.scores$Pooling.method)
+
+# basically just shows that the strictest threshold is the only one with outliers outside of the cow's 95% CI and as such we need to refrain from using the strict thresholds! 
+xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
+    geom_point(size = 3, aes(colour = Threshold, shape=Pooling.method), alpha=0.5)+
+    theme(axis.text.y = element_text(colour = "black", size = 12, face = "bold"), 
+    axis.text.x = element_text(colour = "black", face = "bold", size = 12), 
+    legend.text = element_text(size = 12, face ="bold", colour ="black"), 
+    legend.position = "right", axis.title.y = element_text(face = "bold", size = 14), 
+    axis.title.x = element_text(face = "bold", size = 14, colour = "black"), 
+    legend.title = element_text(size = 14, colour = "black", face = "bold"), 
+    panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
+    legend.key=element_blank()) + 
+    labs(x = "NMDS1", colour = "Copy threshold", y = "NMDS2", linetype = "Cow sampled", shape = "Replicate") + labs(title="Stress value 0.012")  + stat_ellipse(geom="path", aes(linetype=Cow), lwd=1) + scale_colour_discrete(limits = c("All reads", "1", "5", "100", "1000"))
+    
+xx
+
+# now for the NMDS for the primers 
+xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
+    geom_point(size = 3, aes(colour = Primer), alpha=0.5)+
+    theme(axis.text.y = element_text(colour = "black", size = 12, face = "bold"), 
+    axis.text.x = element_text(colour = "black", face = "bold", size = 12), 
+    legend.text = element_text(size = 12, face ="bold", colour ="black"), 
+    legend.position = "right", axis.title.y = element_text(face = "bold", size = 14), 
+    axis.title.x = element_text(face = "bold", size = 14, colour = "black"), 
+    legend.title = element_text(size = 14, colour = "black", face = "bold"), 
+    panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
+    legend.key=element_blank()) + 
+    labs(x = "NMDS1", colour = "Primer chosen", y = "NMDS2", linetype = "Cow sampled") + labs(title="Stress value 0.012")  + stat_ellipse(geom="path", aes(linetype=Cow), lwd=1) 
+    
+xx
