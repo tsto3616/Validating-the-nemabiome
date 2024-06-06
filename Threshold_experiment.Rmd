@@ -129,7 +129,7 @@ df_com<-as.data.frame(com)
 
 jac2<-vegdist(df_com, method="jaccard", binary=FALSE)
 
-adonis2(jac2 ~  Threshold + Pooling.method + Primer + Cow, species2)
+adonis2(jac2 ~  Threshold + Pooling.method + Primer + Cow, species_raw)
 
 # now to evaluate the effect of pooling (first the replicates)
 P1<- subset(species_raw, Pooling.method== "P1")
